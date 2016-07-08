@@ -9,10 +9,11 @@ lookup_phy() {
 	local devpath
 	config_get devpath "$device" path
 	[ -n "$devpath" ] && {
-		for phy in $(ls /sys/class/ieee80211 2>/dev/null); do
-			case "$(readlink -f /sys/class/ieee80211/$phy/device)" in
-				*$devpath) return;;
-			esac
+		for _phy in /sys/devices/$devpath/ieee80211/phy*; do
+			[ -e "$_phy" ] && {
+				phy="${_phy##*/}"
+				return
+			}
 		done
 	}
 
@@ -101,12 +102,14 @@ detect_mac80211() {
 		fi
 		if [ -n "$path" ]; then
 			path="${path##/sys/devices/}"
-			case "$path" in
-				platform*/pci*) path="${path##platform/}";;
-			esac
 			dev_id="	option path	'$path'"
 		else
 			dev_id="	option macaddr	$(cat /sys/class/ieee80211/${dev}/macaddress)"
+		fi
+
+		mach=$(cat /proc/cpuinfo | grep machine | awk '{ print $3}')
+		if [ "$mach"x == "WRTnode2Q"x ] && [ "$path"x == "platform/qca953x_wmac"x ]; then
+			name=WRTnode2Q
 		fi
 
 		cat <<EOF
@@ -117,14 +120,15 @@ config wifi-device  radio$devidx
 $dev_id
 $ht_capab
 	# REMOVE THIS LINE TO ENABLE WIFI:
-	option disabled 1
+	#option disabled 1
 
 config wifi-iface
 	option device   radio$devidx
 	option network  lan
 	option mode     ap
-	option ssid     LEDE
-	option encryption none
+	option ssid     ${name:-WRTnode}_$(cat /sys/class/net/eth0/address|awk -F ":" '{print $5""$6 }'| tr a-z A-Z)
+	option encryption psk2
+	option key	12345678
 
 EOF
 	devidx=$(($devidx + 1))

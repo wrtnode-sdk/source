@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 ARCH:=mipsel
 BOARD:=ramips
 BOARDNAME:=MediaTek Ralink MIPS
-SUBTARGETS:=rt305x mt7620 mt7621 mt7628 mt7688 rt3883 rt288x
+SUBTARGETS:=mt7620 mt7628 mt7688
 FEATURES:=squashfs gpio mips16
 MAINTAINER:=John Crispin <john@phrozen.org>
 
@@ -17,7 +17,7 @@ KERNEL_PATCHVER:=4.4
 
 include $(INCLUDE_DIR)/target.mk
 DEFAULT_PACKAGES += \
-	kmod-leds-gpio kmod-gpio-button-hotplug wpad-mini swconfig
+	kmod-leds-gpio kmod-gpio-button-hotplug wpad-mini swconfig luci iwinfo rpcd-mod-iwinfo  
 
 define Target/Description
 	Build firmware images for Ralink RT288x/RT3xxx based boards.

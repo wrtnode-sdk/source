@@ -112,9 +112,9 @@ generate_network() {
 			uci -q batch <<-EOF
 				set network.$1.proto='dhcp'
 				delete network.${1}6
-				set network.${1}6='interface'
-				set network.${1}6.ifname='$ifname'
-				set network.${1}6.proto='dhcpv6'
+				set network.wwan='interface'
+				set network.wwan.ifname='apcli0'
+				set network.wwan.proto='dhcp'
 			EOF
 		;;
 

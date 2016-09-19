@@ -12,7 +12,7 @@ TARGET_DEVICES += LinkIt7688
 
 define Device/wrtnode2r
   DTS := WRTNODE2R
-  IMAGE_SIZE := $(ralink_default_fw_size_16M)
+  IMAGE_SIZE := $(ralink_default_fw_size_32M)
   DEVICE_TITLE := WRTnode 2R
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci
 endef

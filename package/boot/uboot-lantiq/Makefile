@@ -16,7 +16,7 @@ PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:= \
 	http://mirror2.openwrt.org/sources \
 	ftp://ftp.denx.de/pub/u-boot
-PKG_MD5SUM:=a076a044b64371edc52f7e562b13f6b2
+PKG_HASH:=0d71e62beb952b41ebafb20a7ee4df2f960db64c31b054721ceb79ff14014c55
 PKG_TARGETS:=bin
 
 PKG_LICENSE:=GPL-2.0 GPL-2.0+
@@ -214,6 +214,13 @@ define uboot/acmp252_nor
   DEPS:=@TARGET_lantiq_xway
 endef
 
+define uboot/bthomehubv5a_ram
+  TITLE:=U-Boot for BT Home Hub 5A (RAM)
+  SOC:=vr9
+  DDR_SETTINGS:=board/bt/bthomehubv5a/ddr_settings.h
+  DEPS:=@TARGET_lantiq_xrx200
+endef
+
 define uboot/easy50712_ram
   TITLE:=U-Boot for Lantiq EASY50712 (RAM)
   SOC:=danube
@@ -342,6 +349,7 @@ UBOOTS:= \
 	arv752dpw_ram arv752dpw_nor arv752dpw_brn \
 	arv752dpw22_ram arv752dpw22_nor arv752dpw22_brn \
 	arv8539pw22_brn arv8539pw22_nor arv8539pw22_ram \
+	bthomehubv5a_ram \
 	gigasx76x_ram gigasx76x_nor \
 	acmp252_ram acmp252_nor \
 	easy50712_ram easy50712_nor easy50712_norspl \
@@ -355,7 +363,7 @@ define Package/uboot/template
 define Package/uboot-lantiq-$(1)
   SECTION:=boot
   CATEGORY:=Boot Loaders
-  DEPENDS:=$(3)
+  DEPENDS:=$(3) @!IN_SDK
   TITLE:=$(2)
   URL:=http://www.denx.de/wiki/U-Boot
   VARIANT:=$(1)

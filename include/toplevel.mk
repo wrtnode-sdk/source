@@ -16,13 +16,14 @@ ifeq ($(SDK),1)
   include $(TOPDIR)/include/version.mk
 else
   REVISION:=$(shell $(TOPDIR)/scripts/getver.sh)
+  SOURCE_DATE_EPOCH:=$(shell $(TOPDIR)/scripts/get_source_date_epoch.sh)
 endif
 
 HOSTCC ?= $(CC)
 export REVISION
+export SOURCE_DATE_EPOCH
 export GIT_CONFIG_PARAMETERS='core.autocrlf=false'
 export MAKE_JOBSERVER=$(filter --jobserver%,$(MAKEFLAGS))
-export SOURCE_DATE_EPOCH:=$(shell $(TOPDIR)/scripts/get_source_date_epoch.sh)
 
 # prevent perforce from messing with the patch utility
 unexport P4PORT P4USER P4CONFIG P4CLIENT
@@ -110,7 +111,7 @@ config-clean: FORCE
 
 defconfig: scripts/config/conf prepare-tmpinfo FORCE
 	touch .config
-	@if [ -e $(HOME)/.openwrt/defconfig ]; then cp $(HOME)/.openwrt/defconfig .config; fi
+	@if [ ! -s .config -a -e $(HOME)/.openwrt/defconfig ]; then cp $(HOME)/.openwrt/defconfig .config; fi
 	$< --defconfig=.config Config.in
 
 confdefault-y=allyes
@@ -178,6 +179,9 @@ clean dirclean: .config
 prereq:: prepare-tmpinfo .config
 	@+$(NO_TRACE_MAKE) -r -s $@
 
+check: .config FORCE
+	@+$(NO_TRACE_MAKE) -r -s $@ QUIET= V=s
+
 WARN_PARALLEL_ERROR = $(if $(BUILD_LOG),,$(and $(filter -j,$(MAKEFLAGS)),$(findstring s,$(OPENWRT_VERBOSE))))
 
 ifeq ($(SDK),1)
@@ -221,12 +225,6 @@ package/symlinks-clean:
 
 help:
 	cat README
-
-docs docs/compile: FORCE
-	@$(_SINGLE)$(SUBMAKE) -C docs compile
-
-docs/clean: FORCE
-	@$(_SINGLE)$(SUBMAKE) -C docs clean
 
 distclean:
 	rm -rf bin build_dir .config* dl feeds key-build* logs package/feeds package/openwrt-packages staging_dir tmp

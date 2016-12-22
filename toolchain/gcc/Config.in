@@ -13,8 +13,11 @@ choice
 		depends on arc
 
 	config GCC_USE_VERSION_5
-		select GCC_VERSION_5
 		bool "gcc 5.x"
+		depends on !arc
+
+	config GCC_USE_VERSION_6
+		bool "gcc 6.x"
 		depends on !arc
 
 endchoice
@@ -67,3 +70,11 @@ config INSTALL_GFORTRAN
 	default n
 	help
 	    Build/install GNU fortran compiler ?
+
+config INSTALL_GCCGO
+	bool
+	prompt "Build/install Go compiler?" if TOOLCHAINOPTS
+	depends on !GCC_VERSION_4_8 && (USE_GLIBC || BROKEN)
+	default n
+	help
+	    Build/install GNU gccgo compiler ?

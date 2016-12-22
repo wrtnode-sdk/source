@@ -131,6 +131,7 @@ $(eval $(call KernelPackage,bluetooth-hci-h4p))
 
 
 define KernelPackage/dma-buf
+  SUBMENU:=$(OTHER_MENU)
   TITLE:=DMA shared buffer support
   HIDDEN:=1
   KCONFIG:=CONFIG_DMA_SHARED_BUFFER
@@ -383,7 +384,7 @@ define KernelPackage/sdhci
 	$(LINUX_DIR)/drivers/mmc/host/sdhci.ko \
 	$(LINUX_DIR)/drivers/mmc/host/sdhci-pltfm.ko
 
-  AUTOLOAD:=$(call AutoProbe,sdhci sdhci-pltfm,1)
+  AUTOLOAD:=$(call AutoProbe,sdhci-pltfm,1)
 endef
 
 define KernelPackage/sdhci/description
@@ -398,10 +399,9 @@ define KernelPackage/rfkill
   TITLE:=RF switch subsystem support
   DEPENDS:=@USE_RFKILL +kmod-input-core
   KCONFIG:= \
-    CONFIG_RFKILL \
+    CONFIG_RFKILL_FULL \
     CONFIG_RFKILL_INPUT=y \
-    CONFIG_RFKILL_LEDS=y \
-    CONFIG_RFKILL_GPIO=y
+    CONFIG_RFKILL_LEDS=y
   FILES:= \
     $(LINUX_DIR)/net/rfkill/rfkill.ko
   AUTOLOAD:=$(call AutoLoad,20,rfkill)
@@ -514,22 +514,6 @@ endef
 $(eval $(call KernelPackage,wdt-orion))
 
 
-define KernelPackage/booke-wdt
-  SUBMENU:=$(OTHER_MENU)
-  TITLE:=PowerPC Book-E Watchdog Timer
-  DEPENDS:=@(TARGET_mpc85xx||TARGET_ppc40x||TARGET_ppc44x)
-  KCONFIG:=CONFIG_BOOKE_WDT
-  FILES:=$(LINUX_DIR)/drivers/$(WATCHDOG_DIR)/booke_wdt.ko
-  AUTOLOAD:=$(call AutoLoad,50,booke_wdt,1)
-endef
-
-define KernelPackage/booke-wdt/description
- Kernel module for PowerPC Book-E Watchdog Timer
-endef
-
-$(eval $(call KernelPackage,booke-wdt))
-
-
 define KernelPackage/rtc-ds1307
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Dallas/Maxim DS1307 (and compatible) RTC support
@@ -546,6 +530,24 @@ define KernelPackage/rtc-ds1307/description
 endef
 
 $(eval $(call KernelPackage,rtc-ds1307))
+
+
+define KernelPackage/rtc-ds1374
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=Dallas/Maxim DS1374 RTC support
+  DEPENDS:=@RTC_SUPPORT +kmod-i2c-core
+  KCONFIG:=CONFIG_RTC_DRV_DS1374 \
+	CONFIG_RTC_DRV_DS1374_WDT=n \
+	CONFIG_RTC_CLASS=y
+  FILES:=$(LINUX_DIR)/drivers/rtc/rtc-ds1374.ko
+  AUTOLOAD:=$(call AutoProbe,rtc-ds1374)
+endef
+
+define KernelPackage/rtc-ds1374/description
+ Kernel module for Dallas/Maxim DS1374.
+endef
+
+$(eval $(call KernelPackage,rtc-ds1374))
 
 
 define KernelPackage/rtc-ds1672
@@ -664,6 +666,22 @@ define KernelPackage/rtc-snvs/description
 endef
 
 $(eval $(call KernelPackage,rtc-snvs))
+
+define KernelPackage/rtc-rs5c372a
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=Ricoh R2025S/D, RS5C372A/B, RV5C386, RV5C387A
+  DEPENDS:=@RTC_SUPPORT +kmod-i2c-core
+  KCONFIG:=CONFIG_RTC_DRV_RS5C372 \
+	CONFIG_RTC_CLASS=y
+  FILES:=$(LINUX_DIR)/drivers/rtc/rtc-rs5c372.ko
+  AUTOLOAD:=$(call AutoLoad,50,rtc-rs5c372,1)
+endef
+
+define KernelPackage/rtc-rs5c372a/description
+ Kernel module for Ricoh R2025S/D, RS5C372A/B, RV5C386, RV5C387A RTC on chip module
+endef
+
+$(eval $(call KernelPackage,rtc-rs5c372a))
 
 
 define KernelPackage/mtdtests
@@ -823,6 +841,23 @@ define KernelPackage/pps-gpio/description
 endef
 
 $(eval $(call KernelPackage,pps-gpio))
+
+
+define KernelPackage/pps-ldisc
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=PPS line discipline
+  DEPENDS:=+kmod-pps
+  KCONFIG:=CONFIG_PPS_CLIENT_LDISC
+  FILES:=$(LINUX_DIR)/drivers/pps/clients/pps-ldisc.ko
+  AUTOLOAD:=$(call AutoLoad,18,pps-ldisc,1)
+endef
+
+define KernelPackage/pps-ldisc/description
+ Support for a PPS source connected with the CD (Carrier
+ Detect) pin of your serial port.
+endef
+
+$(eval $(call KernelPackage,pps-ldisc))
 
 
 define KernelPackage/ptp
@@ -990,3 +1025,51 @@ define KernelPackage/echo/description
 endef
 
 $(eval $(call KernelPackage,echo))
+
+
+define KernelPackage/bmp085
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=BMP085/BMP18x pressure sensor
+  DEPENDS:= +kmod-regmap @!LINUX_3_18 @!LINUX_4_1
+  KCONFIG:= CONFIG_BMP085
+  FILES:= $(LINUX_DIR)/drivers/misc/bmp085.ko
+endef
+
+define KernelPackage/bmp085/description
+ This driver adds support for Bosch Sensortec's digital pressure
+ sensors BMP085 and BMP18x.
+endef
+
+$(eval $(call KernelPackage,bmp085))
+
+
+define KernelPackage/bmp085-i2c
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=BMP085/BMP18x pressure sensor I2C
+  DEPENDS:= +kmod-bmp085
+  KCONFIG:= CONFIG_BMP085_I2C
+  FILES:= $(LINUX_DIR)/drivers/misc/bmp085-i2c.ko
+  AUTOLOAD:=$(call AutoProbe,bmp085-i2c)
+endef
+define KernelPackage/bmp085-i2c/description
+ This driver adds support for Bosch Sensortec's digital pressure
+ sensor connected via I2C.
+endef
+
+$(eval $(call KernelPackage,bmp085-i2c))
+
+
+define KernelPackage/bmp085-spi
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=BMP085/BMP18x pressure sensor SPI
+  DEPENDS:= +kmod-bmp085
+  KCONFIG:= CONFIG_BMP085_SPI
+  FILES:= $(LINUX_DIR)/drivers/misc/bmp085-spi.ko
+  AUTOLOAD:=$(call AutoProbe,bmp085-spi)
+endef
+define KernelPackage/bmp085-spi/description
+ This driver adds support for Bosch Sensortec's digital pressure
+ sensor connected via SPI.
+endef
+
+$(eval $(call KernelPackage,bmp085-spi))

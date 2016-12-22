@@ -9,8 +9,8 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=brcm2708-gpu-fw
-PKG_VERSION:=2016-06-08
-PKG_RELEASE:=70143fe9d371cd6486a80d6765e93b5574212b64
+PKG_VERSION:=2016-12-04
+PKG_RELEASE:=d760a4ffd378c648ff5d9854e26dc868a5e1fd09
 
 PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/$(PKG_NAME)/rpi-firmware-$(PKG_RELEASE)
 
@@ -25,7 +25,7 @@ define Download/LICENCE_broadcom
   FILE:=$(RPI_FIRMWARE_FILE)-LICENCE.broadcom
   URL:=$(RPI_FIRMWARE_URL)
   URL_FILE:=LICENCE.broadcom
-  MD5SUM:=4a4d169737c0786fb9482bb6d30401d1
+  HASH:=ba76edfc10a248166d965b8eaf320771c44f4f432d4fce2fd31fd272e7038add
 endef
 $(eval $(call Download,LICENCE_broadcom))
 
@@ -33,7 +33,7 @@ define Download/bootcode_bin
   FILE:=$(RPI_FIRMWARE_FILE)-bootcode.bin
   URL:=$(RPI_FIRMWARE_URL)
   URL_FILE:=bootcode.bin
-  MD5SUM:=5bbb5f25dfe16f2871d5defcc48ac9ff
+  HASH:=a11bd31647c25712648757be75a19fa78c1df6f2409c7bf9bd202903f0421c0c
 endef
 $(eval $(call Download,bootcode_bin))
 
@@ -41,7 +41,7 @@ define Download/fixup_dat
   FILE:=$(RPI_FIRMWARE_FILE)-fixup.dat
   URL:=$(RPI_FIRMWARE_URL)
   URL_FILE:=fixup.dat
-  MD5SUM:=c85a8a7fd6f1012dedb979d5a5350135
+  HASH:=93314d9e01fb53bdf4a25422de89d103cd2e779bd5e81663c658eaecd0c8018e
 endef
 $(eval $(call Download,fixup_dat))
 
@@ -49,7 +49,7 @@ define Download/fixup_cd_dat
   FILE:=$(RPI_FIRMWARE_FILE)-fixup_cd.dat
   URL:=$(RPI_FIRMWARE_URL)
   URL_FILE:=fixup_cd.dat
-  MD5SUM:=1e6c0d6c576956282b498f255eb12d3b
+  HASH:=638671b81590bfdda5eac683d2025e50bb71c663e702f047ef299e23722f6cdd
 endef
 $(eval $(call Download,fixup_cd_dat))
 
@@ -57,7 +57,7 @@ define Download/start_elf
   FILE:=$(RPI_FIRMWARE_FILE)-start.elf
   URL:=$(RPI_FIRMWARE_URL)
   URL_FILE:=start.elf
-  MD5SUM:=94f8e421d6e46e89a60aa001af63844e
+  HASH:=cd60fdce9022fa1195a27f3fdf8eba9136476649006e33b72cbdb23dc3b74e90
 endef
 $(eval $(call Download,start_elf))
 
@@ -65,7 +65,7 @@ define Download/start_cd_elf
   FILE:=$(RPI_FIRMWARE_FILE)-start_cd.elf
   URL:=$(RPI_FIRMWARE_URL)
   URL_FILE:=start_cd.elf
-  MD5SUM:=0a9082c25af181cbf16338de2362d5d6
+  HASH:=2f0cdcdaad7b9bf64f5288e206d54e007597c0c4068a5b893c02e0f4c0785ca5
 endef
 $(eval $(call Download,start_cd_elf))
 

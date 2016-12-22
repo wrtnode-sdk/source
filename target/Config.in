@@ -63,6 +63,9 @@ config USES_TARGZ
 config USES_CPIOGZ
 	bool
 
+config USES_MINOR
+	bool
+
 config USES_UBIFS
 	bool
 	select NAND_SUPPORT
@@ -89,6 +92,9 @@ config NAND_SUPPORT
 config ARCH_64BIT
 	bool
 
+config VIRTIO_SUPPORT
+	bool
+
 # Architecture selection
 
 config aarch64
@@ -112,12 +118,6 @@ config arm
 
 config armeb
 	select BIG_ENDIAN
-	bool
-
-config arm_v4
-	bool
-
-config arm_v5
 	bool
 
 config arm_v6

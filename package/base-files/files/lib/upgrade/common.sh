@@ -69,6 +69,8 @@ run_ramfs() { # <command> [...]
 	install_bin /usr/sbin/ubirmvol
 	install_bin /usr/sbin/ubimkvol
 	install_bin /usr/sbin/partx
+	install_bin /usr/sbin/losetup
+	install_bin /usr/sbin/mkfs.ext4
 	for file in $RAMFS_COPY_BIN; do
 		install_bin ${file//:/ }
 	done
@@ -127,7 +129,7 @@ kill_remaining() { # [ <signal> ]
 		else 
 			case "$name" in
 				# Skip essential services
-				*procd*|*ash*|*init*|*watchdog*|*ssh*|*dropbear*|*telnet*|*login*|*hostapd*|*wpa_supplicant*|*nas*) : ;;
+				*procd*|*ash*|*init*|*watchdog*|*ssh*|*dropbear*|*telnet*|*login*|*hostapd*|*wpa_supplicant*|*nas*|*relayd*) : ;;
 
 				# Killable process
 				*)
@@ -243,6 +245,7 @@ do_upgrade() {
 	[ -n "$DELAY" ] && sleep "$DELAY"
 	ask_bool 1 "Reboot" && {
 		v "Rebooting system..."
+		umount -a
 		reboot -f
 		sleep 5
 		echo b 2>/dev/null >/proc/sysrq-trigger

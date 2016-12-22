@@ -16,9 +16,8 @@ platform_check_image() {
 	case "$board" in
 	3g150b|\
 	3g300m|\
-	3g-6200n|\
-	3g-6200nl|\
 	a5-v11|\
+	ac1200pro|\
 	ai-br100|\
 	air3gii|\
 	all0239-3g|\
@@ -51,6 +50,7 @@ platform_check_image() {
 	dir-620-d1|\
 	dir-810l|\
 	duzun-dm06|\
+	dwr-512-b|\
 	e1700|\
 	esr-9753|\
 	ex2700|\
@@ -71,11 +71,13 @@ platform_check_image() {
 	jhr-n805r|\
 	jhr-n825r|\
 	jhr-n926r|\
+	kng_rc|\
 	linkits7688|\
 	linkits7688d|\
 	m2m|\
 	m3|\
 	m4|\
+	mac1200rv2|\
 	microwrt|\
 	miniembplug|\
 	miniembwifi|\
@@ -95,12 +97,18 @@ platform_check_image() {
 	mzk-w300nh2|\
 	mzk-wdpr|\
 	nbg-419n|\
+	nbg-419n2|\
+	newifi-d1|\
+	nixcore|\
 	nw718|\
 	oy-0001|\
+	pbr-d1|\
 	pbr-m1|\
 	psg1208|\
+	psg1218|\
 	psr-680w|\
 	px-4885|\
+	rb750gr3|\
 	re6500|\
 	rp-n53|\
 	rt5350f-olinuxino|\
@@ -117,12 +125,16 @@ platform_check_image() {
 	sl-r7205|\
 	tew-691gr|\
 	tew-692gr|\
+	tew-714tru|\
+	timecloud|\
 	tiny-ac|\
 	ur-326n4g|\
 	ur-336un|\
 	v22rw-2x2|\
 	vocore|\
+	vr500|\
 	w150m|\
+	w2914nsv2|\
 	w306r-v20|\
 	w502u|\
 	wf-2881|\
@@ -137,7 +149,9 @@ platform_check_image() {
 	wl-330n3g|\
 	wl-341v3|\
 	wl-351|\
+	wl-wn575a3|\
 	wli-tx4-ag300n|\
+	wlr-6000|\
 	wmr-300|\
 	wnce2001|\
 	wndr3700v5|\
@@ -156,6 +170,7 @@ platform_check_image() {
 	y1|\
 	y1s|\
 	zbt-ape522ii|\
+	zbt-cpe102|\
 	zbt-wa05|\
 	zbt-we826|\
 	zbt-wg2626|\
@@ -169,15 +184,18 @@ platform_check_image() {
 		}
 		return 0
 		;;
-	ar670w)
-		[ "$magic" != "6d000080" ] && {
+	3g-6200n|\
+	3g-6200nl|\
+	br-6475nd)
+		[ "$magic" != "43535953" ] && {
 			echo "Invalid image type."
 			return 1
 		}
 		return 0
 		;;
-	br-6475nd)
-		[ "$magic" != "43535953" ] && {
+
+	ar670w)
+		[ "$magic" != "6d000080" ] && {
 			echo "Invalid image type."
 			return 1
 		}
@@ -192,6 +210,7 @@ platform_check_image() {
 		return 0
 		;;
 	cy-swr1100|\
+	dch-m225|\
 	dir-610-a1|\
 	dir-645|\
 	dir-860l-b1)

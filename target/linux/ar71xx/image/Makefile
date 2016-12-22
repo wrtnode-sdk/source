@@ -5,12 +5,8 @@
 # See /LICENSE for more information.
 #
 
-JFFS2_BLOCKSIZE = 64k 128k 256k
-
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
-
-IMAGE_PROFILE:=$(if $(PROFILE),$(PROFILE),Default)
 
 KERNEL_LOADADDR = 0x80060000
 
@@ -20,6 +16,7 @@ ifeq ($(SUBTARGET),generic)
 include ./tp-link.mk
 include ./ubnt.mk
 include ./generic.mk
+include ./legacy-devices.mk
 endif
 ifeq ($(SUBTARGET),nand)
 include ./nand.mk
@@ -79,6 +76,19 @@ define Build/loader-okli
 	mv "$@.new" "$@"
 endef
 
+define Build/relocate-kernel
+	rm -rf $@.relocate
+	$(CP) ../../generic/image/relocate $@.relocate
+	$(MAKE) -j1 -C $@.relocate KERNEL_ADDR=$(KERNEL_LOADADDR) CROSS_COMPILE=$(TARGET_CROSS)
+	( \
+		dd if=$@.relocate/loader.bin bs=32 conv=sync && \
+		perl -e '@s = stat("$@"); print pack("N", @s[7])' && \
+		cat "$@" \
+	) > "$@.new"
+	mv "$@.new" "$@"
+	rm -rf $@.relocate
+endef
+
 define Build/copy-file
 	cat "$(1)" > "$@"
 endef
@@ -88,15 +98,13 @@ define Device/Default
   DEVICE_PROFILE = $$(BOARDNAME)
   PROFILES = Default Minimal $$(DEVICE_PROFILE)
   MTDPARTS :=
-  IMAGES := sysupgrade.bin
   BLOCKSIZE := 64k
-  FILESYSTEMS = $(filter-out jffs2-%,$(TARGET_FILESYSTEMS)) jffs2-$$(BLOCKSIZE)
   CONSOLE = ttyS0,115200
   CMDLINE = $$(if $$(BOARDNAME),board=$$(BOARDNAME)) $$(if $$(MTDPARTS),mtdparts=$$(MTDPARTS)) $$(if $$(CONSOLE),console=$$(CONSOLE))
   KERNEL := kernel-bin | patch-cmdline | lzma | uImage lzma
   COMPILE :=
   IMAGES := sysupgrade.bin
-  IMAGE/sysupgrade.bin = append-kernel $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | check-size $$$$(IMAGE_SIZE)
+  IMAGE/sysupgrade.bin = append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | check-size $$$$(IMAGE_SIZE)
 endef
 
 $(eval $(call BuildImage))

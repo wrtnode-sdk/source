@@ -252,6 +252,22 @@ endef
 
 $(eval $(call KernelPackage,hwmon-sht21))
 
+define KernelPackage/hwmon-sch5627
+  TITLE:=SMSC SCH5627 monitoring support
+  KCONFIG:=CONFIG_SENSORS_SCH5627
+  FILES:= \
+	$(LINUX_DIR)/drivers/hwmon/sch5627.ko \
+	$(LINUX_DIR)/drivers/hwmon/sch56xx-common.ko
+  AUTOLOAD:=$(call AutoProbe,sch5627)
+  $(call AddDepends/hwmon,+kmod-i2c-core)
+endef
+
+define KernelPackage/hwmon-sch5627/description
+ SMSC SCH5627 Super I/O chips include complete hardware monitoring
+endef
+
+$(eval $(call KernelPackage,hwmon-sch5627))
+
 define KernelPackage/hwmon-pc87360
   TITLE:=PC87360 monitoring support
   KCONFIG:=CONFIG_SENSORS_PC87360
@@ -282,6 +298,21 @@ endef
 $(eval $(call KernelPackage,hwmon-w83627hf))
 
 
+define KernelPackage/hwmon-w83793
+  TITLE:=Winbond W83793G/R monitoring support
+  KCONFIG:=CONFIG_SENSORS_W83793
+  FILES:=$(LINUX_DIR)/drivers/hwmon/w83793.ko
+  AUTOLOAD:=$(call AutoProbe,w83793)
+  $(call AddDepends/hwmon,+kmod-i2c-core +kmod-hwmon-vid)
+endef
+
+define KernelPackage/hwmon-w83793/description
+  Kernel module for the Winbond W83793G and W83793R chips.
+endef
+
+$(eval $(call KernelPackage,hwmon-w83793))
+
+
 define KernelPackage/hwmon-gsc
   TITLE:=Gateworks GSC monitoring support
   KCONFIG:=CONFIG_SENSORS_GSC
@@ -295,6 +326,36 @@ define KernelPackage/hwmon-gsc/description
 endef
 
 $(eval $(call KernelPackage,hwmon-gsc))
+
+
+define KernelPackage/hwmon-tmp102
+  TITLE:=Texas Instruments TMP102 monitoring support
+  KCONFIG:=CONFIG_SENSORS_TMP102
+  FILES:=$(LINUX_DIR)/drivers/hwmon/tmp102.ko
+  AUTOLOAD:=$(call AutoProbe,tmp102)
+  $(call AddDepends/hwmon,+kmod-i2c-core +PACKAGE_kmod-thermal:kmod-thermal)
+endef
+
+define KernelPackage/hwmon-tmp102/description
+ Kernel module for Texas Instruments TMP102 temperature sensors chip
+endef
+
+$(eval $(call KernelPackage,hwmon-tmp102))
+
+
+define KernelPackage/hwmon-tmp103
+  TITLE:=Texas Instruments TMP103 monitoring support
+  KCONFIG:=CONFIG_SENSORS_TMP103
+  FILES:=$(LINUX_DIR)/drivers/hwmon/tmp103.ko
+  AUTOLOAD:=$(call AutoProbe,tmp103)
+  $(call AddDepends/hwmon,+kmod-i2c-core +kmod-regmap)
+endef
+
+define KernelPackage/hwmon-tmp103/description
+ Kernel module for Texas Instruments TMP103 temperature sensors chip
+endef
+
+$(eval $(call KernelPackage,hwmon-tmp103))
 
 
 define KernelPackage/hwmon-tmp421

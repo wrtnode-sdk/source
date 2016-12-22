@@ -14,7 +14,7 @@ PKG_RELEASE:=3
 
 PKG_SOURCE:=uClibc++-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=http://cxx.uclibc.org/src/
-PKG_MD5SUM:=394c119363dd8b469fb898442a6764b8
+PKG_HASH:=be16fc6a6eb2e59df420ee41e7042f38e27ebaf5c2762d90e75803364a7b00db
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/uClibc++-$(PKG_VERSION)
 PKG_BUILD_PARALLEL:=1
@@ -63,6 +63,7 @@ MAKE_FLAGS:= \
 	LDFLAGS="-Wl,--warn-common -Wl,--warn-once -Wl,-z,combreloc -Wl,-z,defs $(TARGET_LDFLAGS)" \
 	CP="$(CP)" \
 	GEN_LIBS="-lc $(LIBGCC_S) $(SSP_LIB)" \
+	GEN_CFLAGS="-std=gnu++98 -nostdinc++" \
 	check_as_needed=
 
 # check_as_needed overrides dependency on libgcc_s

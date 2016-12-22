@@ -5,9 +5,9 @@
 # mkubntimage is using the kernel image direct
 # routerboard creates partitions out of the ubnt header
 define Build/mkubntimage
-	$(STAGING_DIR_HOST)/bin/mkfwimage \
+	-$(STAGING_DIR_HOST)/bin/mkfwimage \
 		-B $(UBNT_BOARD) -v $(UBNT_TYPE).$(UBNT_CHIP).v6.0.0-OpenWrt-$(REVISION) \
-		-k $(word 1,$^) \
+		-k $(IMAGE_KERNEL) \
 		-r $@ \
 		-o $@
 endef
@@ -15,18 +15,19 @@ endef
 # all UBNT XM device expect the kernel image to have 1024k while flash, when
 # booting the image, the size doesn't matter.
 define Build/mkubntimage-split
-	dd if=$@ of=$@.old1 bs=1024k count=1
-	dd if=$@ of=$@.old2 bs=1024k skip=1
+	-[ -f $@ ] && ( \
+	dd if=$@ of=$@.old1 bs=1024k count=1; \
+	dd if=$@ of=$@.old2 bs=1024k skip=1; \
 	$(STAGING_DIR_HOST)/bin/mkfwimage \
 		-B $(UBNT_BOARD) -v $(UBNT_TYPE).$(UBNT_CHIP).v6.0.0-OpenWrt-$(REVISION) \
 		-k $@.old1 \
 		-r $@.old2 \
-		-o $@
-	rm $@.old1 $@.old2
+		-o $@; \
+	rm $@.old1 $@.old2 )
 endef
 
 define Build/mkubntimage2
-	$(STAGING_DIR_HOST)/bin/mkfwimage2 -f 0x9f000000 \
+	-$(STAGING_DIR_HOST)/bin/mkfwimage2 -f 0x9f000000 \
 		-v $(UBNT_TYPE).$(UBNT_CHIP).v6.0.0-OpenWrt-$(REVISION) \
 		-p jffs2:0x50000:0xf60000:0:0:$@ \
 		-o $@.new
@@ -48,7 +49,7 @@ define Device/ubnt-xm
   UBNT_CHIP := ar7240
   IMAGES := sysupgrade.bin factory.bin
   IMAGE/factory.bin = $$(IMAGE/sysupgrade.bin) | mkubntimage-split
-  IMAGE/sysupgrade.bin = append-kernel $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | check-size $$$$(IMAGE_SIZE)
+  IMAGE/sysupgrade.bin = append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | check-size $$$$(IMAGE_SIZE)
 endef
 
 define Device/ubnt-xw
@@ -61,7 +62,7 @@ define Device/ubnt-xw
   UBNT_CHIP := ar934x
   IMAGES := sysupgrade.bin factory.bin
   IMAGE/factory.bin = $$(IMAGE/sysupgrade.bin) | mkubntimage-split
-  IMAGE/sysupgrade.bin = append-kernel $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | check-size $$$$(IMAGE_SIZE)
+  IMAGE/sysupgrade.bin = append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | check-size $$$$(IMAGE_SIZE)
 endef
 
 define Device/ubnt-bz
@@ -74,7 +75,7 @@ define Device/ubnt-bz
   UBNT_CHIP := ar934x
   IMAGES := sysupgrade.bin factory.bin
   IMAGE/factory.bin = $$(IMAGE/sysupgrade.bin) | mkubntimage-split
-  IMAGE/sysupgrade.bin = append-kernel $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | check-size $$$$(IMAGE_SIZE)
+  IMAGE/sysupgrade.bin = append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | check-size $$$$(IMAGE_SIZE)
 endef
 
 define Device/ubnt-unifiac
@@ -83,7 +84,7 @@ define Device/ubnt-unifiac
   IMAGE_SIZE := 7744k
   MTDPARTS = spi0.0:384k(u-boot)ro,64k(u-boot-env)ro,7744k(firmware),7744k(ubnt-airos)ro,128k(bs)ro,256k(cfg)ro,64k(EEPROM)ro
   IMAGES := sysupgrade.bin
-  IMAGE/sysupgrade.bin = append-kernel $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | check-size $$$$(IMAGE_SIZE)
+  IMAGE/sysupgrade.bin = append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | check-size $$$$(IMAGE_SIZE)
 endef
 
 define Device/rw2458n
@@ -261,13 +262,13 @@ define Device/ubnt-uap-pro
   DEVICE_PROFILE := UBNT UAPPRO
   KERNEL := kernel-bin | patch-cmdline | lzma | uImage lzma | jffs2 kernel0
   IMAGES := sysupgrade.bin factory.bin
-  IMAGE/sysupgrade.bin = append-kernel $$$$(KERNEL_SIZE) | append-rootfs | pad-rootfs | check-size $$$$(IMAGE_SIZE)
+  IMAGE/sysupgrade.bin = append-kernel | pad-to $$$$(KERNEL_SIZE) | append-rootfs | pad-rootfs | check-size $$$$(IMAGE_SIZE)
   IMAGE/factory.bin = $$(IMAGE/sysupgrade.bin) | mkubntimage2
 endef
 
 define Device/ubnt-unifi-outdoor-plus
 $(Device/ubnt-uap-pro)
-  DEVICE_TITLE := Ubiquiti UniFi Outdoor Pro
+  DEVICE_TITLE := Ubiquiti UniFi Outdoor Plus
   UBNT_CHIP := ar7240
   BOARDNAME := UBNT-UOP
   DEVICE_PROFILE := UBNT

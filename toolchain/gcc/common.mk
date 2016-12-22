@@ -28,15 +28,19 @@ GCC_DIR:=$(PKG_NAME)-$(PKG_VERSION)
 PKG_SOURCE_URL:=@GNU/gcc/gcc-$(PKG_VERSION)
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 
-ifeq ($(PKG_VERSION),5.3.0)
-  PKG_MD5SUM:=c9616fd448f980259c31de613e575719
+ifeq ($(PKG_VERSION),5.4.0)
+  PKG_HASH:=608df76dec2d34de6558249d8af4cbee21eceddbcb580d666f7a5a583ca3303a
+endif
+
+ifeq ($(PKG_VERSION),6.2.0)
+  PKG_HASH:=9944589fc722d3e66308c0ce5257788ebd7872982a718aa2516123940671b7c5
 endif
 
 ifneq ($(CONFIG_GCC_VERSION_4_8_ARC),)
     PKG_VERSION:=4.8.5
     PKG_SOURCE_URL:=https://github.com/foss-for-synopsys-dwc-arc-processors/gcc/archive/arc-2016.03
     PKG_SOURCE:=$(PKG_NAME)-$(GCC_VERSION).tar.gz
-    PKG_MD5SUM:=ca59c8140d6efd07b97a18869bddbb53
+    PKG_HASH:=6a5eb0c83dca16f228ac836677a1fbb42a53c30334487ac37c2c18db80a38f35
     PKG_REV:=2016.03
     GCC_DIR:=gcc-arc-$(PKG_REV)
     HOST_BUILD_DIR = $(BUILD_DIR_HOST)/$(PKG_NAME)-$(GCC_VERSION)
@@ -45,11 +49,7 @@ endif
 PATCH_DIR=../patches/$(GCC_VERSION)
 
 BUGURL=http://www.lede-project.org/bugs/
-ifeq ($(findstring linaro, $(CONFIG_GCC_VERSION)),linaro)
-  PKGVERSION=LEDE/Linaro GCC $(PKG_REV) $(REVISION)
-else
-  PKGVERSION=LEDE GCC $(PKG_VERSION) $(REVISION)
-endif
+PKGVERSION=LEDE GCC $(PKG_VERSION) $(REVISION)
 
 HOST_BUILD_PARALLEL:=1
 
@@ -69,11 +69,14 @@ HOST_STAMP_CONFIGURED:=$(GCC_BUILD_DIR)/.configured
 HOST_STAMP_INSTALLED:=$(STAGING_DIR_HOST)/stamp/.gcc_$(GCC_VARIANT)_installed
 
 SEP:=,
-TARGET_LANGUAGES:="c,c++$(if $(CONFIG_INSTALL_LIBGCJ),$(SEP)java)$(if $(CONFIG_INSTALL_GFORTRAN),$(SEP)fortran)"
+TARGET_LANGUAGES:="c,c++$(if $(CONFIG_INSTALL_LIBGCJ),$(SEP)java)$(if $(CONFIG_INSTALL_GFORTRAN),$(SEP)fortran)$(if $(CONFIG_INSTALL_GCCGO),$(SEP)go)"
 
 export libgcc_cv_fixed_point=no
 ifdef CONFIG_USE_UCLIBC
   export glibcxx_cv_c99_math_tr1=no
+endif
+ifdef CONFIG_INSTALL_GCCGO
+  export libgo_cv_c_split_stack_supported=no
 endif
 
 ifdef CONFIG_GCC_USE_GRAPHITE
@@ -104,6 +107,7 @@ GCC_CONFIGURE:= \
 		--disable-libgomp \
 		--disable-libmudflap \
 		--disable-multilib \
+		--disable-libmpx \
 		--disable-nls \
 		$(GRAPHITE_CONFIGURE) \
 		--with-host-libstdcxx=-lstdc++ \
@@ -163,16 +167,41 @@ ifneq ($(CONFIG_SOFT_FLOAT),y)
   endif
 endif
 
+ifeq ($(CONFIG_TARGET_x86)$(CONFIG_USE_GLIBC)$(CONFIG_INSTALL_GCCGO),yyy)
+  TARGET_CFLAGS+=-fno-split-stack
+endif
+
 GCC_MAKE:= \
 	export SHELL="$(BASH)"; \
 	$(MAKE) \
 		CFLAGS="$(HOST_CFLAGS)" \
 		CFLAGS_FOR_TARGET="$(TARGET_CFLAGS)" \
-		CXXFLAGS_FOR_TARGET="$(TARGET_CFLAGS)"
+		CXXFLAGS_FOR_TARGET="$(TARGET_CFLAGS)" \
+		GOCFLAGS_FOR_TARGET="$(TARGET_CFLAGS)"
 
-define Host/Prepare
-	mkdir -p $(GCC_BUILD_DIR)
+define Host/SetToolchainInfo
+	$(SED) 's,TARGET_CROSS=.*,TARGET_CROSS=$(REAL_GNU_TARGET_NAME)-,' $(TOOLCHAIN_DIR)/info.mk
+	$(SED) 's,GCC_VERSION=.*,GCC_VERSION=$(GCC_VERSION),' $(TOOLCHAIN_DIR)/info.mk
 endef
+
+ifneq ($(GCC_PREPARE),)
+  define Host/Prepare
+	$(call Host/SetToolchainInfo)
+	$(call Host/Prepare/Default)
+	ln -snf $(GCC_DIR) $(BUILD_DIR_TOOLCHAIN)/$(PKG_NAME)
+	$(CP) $(SCRIPT_DIR)/config.{guess,sub} $(HOST_SOURCE_DIR)/
+	$(SED) 's,^MULTILIB_OSDIRNAMES,# MULTILIB_OSDIRNAMES,' $(HOST_SOURCE_DIR)/gcc/config/*/t-*
+	$(SED) 'd' $(HOST_SOURCE_DIR)/gcc/DEV-PHASE
+	$(SED) 's, DATESTAMP,,' $(HOST_SOURCE_DIR)/gcc/version.c
+	#(cd $(HOST_SOURCE_DIR)/libstdc++-v3; autoconf;);
+	$(SED) 's,gcc_no_link=yes,gcc_no_link=no,' $(HOST_SOURCE_DIR)/libstdc++-v3/configure
+	mkdir -p $(GCC_BUILD_DIR)
+  endef
+else
+  define Host/Prepare
+	mkdir -p $(GCC_BUILD_DIR)
+  endef
+endif
 
 define Host/Configure
 	(cd $(GCC_BUILD_DIR) && rm -f config.cache; \
@@ -181,7 +210,7 @@ define Host/Configure
 endef
 
 define Host/Clean
-	rm -rf \
+	rm -rf $(if $(GCC_PREPARE),$(HOST_SOURCE_DIR)) \
 		$(STAGING_DIR_HOST)/stamp/.gcc_* \
 		$(STAGING_DIR_HOST)/stamp/.binutils_* \
 		$(GCC_BUILD_DIR) \

@@ -23,7 +23,7 @@ ifeq ($(CONFIG_EXTERNAL_TOOLCHAIN),)
     endif
   endif
 endif
-ifneq ($(CONFIG_PACKAGE_kmod-b43)$(CONFIG_PACKAGE_b43legacy-firmware)$(CONFIG_BRCMSMAC_USE_FW_FROM_WL),)
+ifneq ($(CONFIG_SDK)$(CONFIG_PACKAGE_kmod-b43)$(CONFIG_PACKAGE_b43legacy-firmware)$(CONFIG_BRCMSMAC_USE_FW_FROM_WL),)
   BUILD_B43_TOOLS = y
 endif
 
@@ -32,17 +32,19 @@ tools-y += m4 libtool autoconf automake flex bison pkg-config sed mklibs
 tools-y += sstrip make-ext4fs e2fsprogs mtd-utils mkimage
 tools-y += firmware-utils patch-image patch quilt yaffs2 padjffs2
 tools-y += mm-macros missing-macros xz cmake scons bc findutils gengetopt patchelf
+tools-y += mtools dosfstools
 tools-$(CONFIG_TARGET_orion_generic) += wrt350nv2-builder upslug2
 tools-$(CONFIG_powerpc) += upx
 tools-$(CONFIG_TARGET_x86) += qemu
 tools-$(CONFIG_TARGET_mxs) += elftosb sdimage
-tools-$(CONFIG_TARGET_brcm2708)$(CONFIG_TARGET_sunxi)$(CONFIG_TARGET_mxs)$(CONFIG_TARGET_omap) += mtools dosfstools
 tools-$(CONFIG_TARGET_ar71xx) += lzma-old squashfs
+tools-$(CONFIG_USES_MINOR) += kernel2minor
 tools-y += lzma squashfs4
 tools-$(BUILD_B43_TOOLS) += b43-tools
 tools-$(BUILD_PPL_CLOOG) += ppl cloog
 tools-$(BUILD_ISL) += isl
 tools-$(CONFIG_USE_SPARSE) += sparse
+tools-$(CONFIG_TARGET_apm821xx) += genext2fs
 
 # builddir dependencies
 $(curdir)/bison/compile := $(curdir)/flex/install
@@ -77,20 +79,27 @@ $(curdir)/bc/compile := $(curdir)/bison/install
 $(curdir)/findutils/compile := $(curdir)/bison/install
 $(curdir)/gengetopt/compile := $(curdir)/libtool/install
 $(curdir)/patchelf/compile := $(curdir)/libtool/install
+$(curdir)/dosfstools/compile := $(curdir)/autoconf/install $(curdir)/automake/install
 ifeq ($(HOST_OS),Darwin)
 tools-y += libressl
 $(curdir)/mkimage/compile += $(curdir)/libressl/install
 $(curdir)/firmware-utils/compile += $(curdir)/libressl/install
 endif
+ifneq ($(HOST_OS),Linux)
+  tools-y += coreutils
+endif
 
 ifneq ($(CONFIG_CCACHE)$(CONFIG_SDK),)
-$(foreach tool, $(filter-out patch,$(tools-y)), $(eval $(curdir)/$(tool)/compile += $(curdir)/ccache/install))
+$(foreach tool, $(filter-out xz patch,$(tools-y)), $(eval $(curdir)/$(tool)/compile += $(curdir)/ccache/install))
 tools-y += ccache
 endif
 
 # in case there is no patch tool on the host we need to make patch tool a
 # dependency for tools which have patches directory
 $(foreach tool, $(tools-y), $(if $(wildcard $(curdir)/$(tool)/patches),$(eval $(curdir)/$(tool)/compile += $(curdir)/patch/install)))
+
+# make any tool (except xz itself) depend on XZ to ensure that *.tar.xz source archives can be unpacked
+$(foreach tool, $(filter-out xz,$(tools-y)), $(eval $(curdir)/$(tool)/compile += $(curdir)/xz/install))
 
 $(foreach tool, $(tools-y), $(eval $(curdir)/$(tool)/compile += $(curdir)/tar/install))
 tools-y += tar
@@ -100,6 +109,11 @@ tools-y += flock
 
 $(curdir)/builddirs := $(tools-y) $(tools-dep) $(tools-)
 $(curdir)/builddirs-default := $(tools-y)
+
+ifdef CHECK_ALL
+$(curdir)/builddirs-check:=$($(curdir)/builddirs)
+$(curdir)/builddirs-download:=$($(curdir)/builddirs)
+endif
 
 ifndef DUMP_TARGET_DB
 define PrepareStaging
@@ -136,4 +150,5 @@ $(curdir)//install = $(1)/compile
 
 tools_enabled = $(foreach tool,$(sort $(tools-y) $(tools-)),$(if $(filter $(tool),$(tools-y)),y,n))
 $(eval $(call stampfile,$(curdir),tools,install,,_$(subst $(space),,$(tools_enabled))))
+$(eval $(call stampfile,$(curdir),tools,check,$(TMP_DIR)/.build))
 $(eval $(call subdir,$(curdir)))

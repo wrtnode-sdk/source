@@ -47,7 +47,8 @@ I2C_RALINK_MODULES:= \
 define KernelPackage/i2c-ralink
   $(call i2c_defaults,$(I2C_RALINK_MODULES),59)
   TITLE:=Ralink I2C Controller
-  DEPENDS:=@TARGET_ramips @(!TARGET_ramips_mt7621) kmod-i2c-core
+  DEPENDS:=kmod-i2c-core @TARGET_ramips \
+	@!(TARGET_ramips_mt7621||TARGET_ramips_mt7628||TARGET_ramips_mt7688)
 endef
 
 define KernelPackage/i2c-ralink/description
@@ -63,7 +64,8 @@ I2C_MT7621_MODULES:= \
 define KernelPackage/i2c-mt7621
   $(call i2c_defaults,$(I2C_MT7621_MODULES),59)
   TITLE:=MT7621 I2C Controller
-  DEPENDS:=@TARGET_ramips @TARGET_ramips_mt7621 kmod-i2c-core
+  DEPENDS:=kmod-i2c-core \
+	@(TARGET_ramips_mt7621||TARGET_ramips_mt7628||TARGET_ramips_mt7688)
 endef
 
 define KernelPackage/i2c-mt7621/description
@@ -72,18 +74,58 @@ endef
 
 $(eval $(call KernelPackage,i2c-mt7621))
 
+define KernelPackage/dma-ralink
+  SUBMENU:=Other modules
+  TITLE:=Ralink GDMA Engine
+  DEPENDS:=@TARGET_ramips
+  KCONFIG:= \
+	CONFIG_DMADEVICES=y \
+	CONFIG_DW_DMAC_PCI=n \
+	CONFIG_DMA_RALINK
+  FILES:= \
+	$(LINUX_DIR)/drivers/dma/virt-dma.ko \
+	$(LINUX_DIR)/drivers/dma/ralink-gdma.ko
+  AUTOLOAD:=$(call AutoLoad,52,ralink-gdma)
+endef
 
+define KernelPackage/dma-ralink/description
+ Kernel modules for enable ralink dma engine.
+endef
+
+$(eval $(call KernelPackage,dma-ralink))
+
+define KernelPackage/hsdma-mtk
+  SUBMENU:=Other modules
+  TITLE:=MediaTek HSDMA Engine
+  DEPENDS:=@TARGET_ramips @TARGET_ramips_mt7621
+  KCONFIG:= \
+	CONFIG_DMADEVICES=y \
+	CONFIG_DW_DMAC_PCI=n \
+	CONFIG_MTK_HSDMA
+  FILES:= \
+	$(LINUX_DIR)/drivers/dma/virt-dma.ko \
+	$(LINUX_DIR)/drivers/dma/mtk-hsdma.ko
+  AUTOLOAD:=$(call AutoLoad,53,mtk-hsdma)
+endef
+
+define KernelPackage/hsdma-mtk/description
+ Kernel modules for enable MediaTek hsdma engine.
+endef
+
+$(eval $(call KernelPackage,hsdma-mtk))
 
 define KernelPackage/sound-mt7620
   TITLE:=MT7620 PCM/I2S Alsa Driver
-  DEPENDS:=@TARGET_ramips_mt7620 +kmod-sound-soc-core +kmod-regmap @!TARGET_ramips_rt288x
+  DEPENDS:=@TARGET_ramips +kmod-sound-soc-core +kmod-regmap +kmod-dma-ralink @!TARGET_ramips_rt288x
   KCONFIG:= \
 	CONFIG_SND_RALINK_SOC_I2S \
+	CONFIG_SND_SIMPLE_CARD \
 	CONFIG_SND_SOC_WM8960
   FILES:= \
 	$(LINUX_DIR)/sound/soc/ralink/snd-soc-ralink-i2s.ko \
+	$(LINUX_DIR)/sound/soc/generic/snd-soc-simple-card.ko \
 	$(LINUX_DIR)/sound/soc/codecs/snd-soc-wm8960.ko
-  AUTOLOAD:=$(call AutoLoad,90,snd-soc-wm8960 snd-soc-ralink-i2s)
+  AUTOLOAD:=$(call AutoLoad,90,snd-soc-wm8960 snd-soc-ralink-i2s snd-soc-simple-card)
   $(call AddDepends/sound)
 endef
 

@@ -15,6 +15,11 @@ endif
 include $(TOPDIR)/include/debug.mk
 include $(TOPDIR)/include/verbose.mk
 
+ifneq ($(filter check,$(MAKECMDGOALS)),)
+CHECK:=1
+DUMP:=1
+endif
+
 export TMP_DIR:=$(TOPDIR)/tmp
 
 qstrip=$(strip $(subst ",,$(1)))
@@ -140,6 +145,7 @@ PKG_INFO_DIR := $(STAGING_DIR)/pkginfo
 
 BUILD_DIR_HOST:=$(if $(IS_PACKAGE_BUILD),$(BUILD_DIR)/host,$(BUILD_DIR_BASE)/host)
 STAGING_DIR_HOST:=$(TOPDIR)/staging_dir/host
+STAGING_DIR_HOSTPKG:=$(STAGING_DIR)/host
 
 TARGET_PATH:=$(subst $(space),:,$(filter-out .,$(filter-out ./,$(subst :,$(space),$(PATH)))))
 TARGET_INIT_PATH:=$(call qstrip,$(CONFIG_TARGET_INIT_PATH))
@@ -371,12 +377,22 @@ define file_copy
 	$(CP) $(1) $(2)
 endef
 
+# Calculate sha256sum of any plain file within a given directory
+# $(1) => Input directory
+define sha256sums
+	(cd $(1); find . -maxdepth 1 -type f -not -name 'sha256sums' -printf "%P\n" | sort | \
+		xargs openssl dgst -sha256 | sed -ne 's!^SHA256(\(.*\))= \(.*\)$$!\2 *\1!p' > sha256sums)
+endef
+
 # file extension
 ext=$(word $(words $(subst ., ,$(1))),$(subst ., ,$(1)))
 
 all:
 FORCE: ;
 .PHONY: FORCE
+
+check: FORCE
+	@true
 
 val.%:
 	@$(if $(filter undefined,$(origin $*)),\

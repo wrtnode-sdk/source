@@ -1,5 +1,6 @@
 #
 # Copyright (C) 2010-2014 OpenWrt.org
+# Copyright (C) 2016 Luiz Angelo Daros de Luca <luizluca@gmail.com>
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -7,12 +8,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=elfutils
-PKG_VERSION:=0.165
+PKG_VERSION:=0.167
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=http://fedorahosted.org/releases/e/l/$(PKG_NAME)/$(PKG_VERSION)
-PKG_MD5SUM:=c37fdbe18e848002b451562cba964679
+PKG_HASH:=3f300087c42b6f35591163b48246b4098ce39c4c6f5d55a83023c903c5776553
 PKG_MAINTAINER:=Luiz Angelo Daros de Luca <luizluca@gmail.com>
 PKG_LICENSE:=GPL-3.0+
 PKG_LICENSE_FILES:=COPYING COPYING-GPLV2 COPYING-LGPLV3
@@ -35,7 +36,7 @@ endef
 define Package/libasm
   $(call Package/elfutils/Default)
   TITLE+= (libasm)
-  DEPENDS:=libelf1
+  DEPENDS:=libelf1 +libdw
 endef
 
 define Package/libdw

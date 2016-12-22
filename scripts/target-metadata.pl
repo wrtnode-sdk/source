@@ -27,6 +27,7 @@ sub target_config_features(@) {
 		/ext4/ and $ret .= "\tselect USES_EXT4\n";
 		/targz/ and $ret .= "\tselect USES_TARGZ\n";
 		/cpiogz/ and $ret .= "\tselect USES_CPIOGZ\n";
+		/minor/ and $ret .= "\tselect USES_MINOR\n";
 		/ubifs/ and $ret .= "\tselect USES_UBIFS\n";
 		/fpu/ and $ret .= "\tselect HAS_FPU\n";
 		/spe_fpu/ and $ret .= "\tselect HAS_SPE_FPU\n";
@@ -38,6 +39,7 @@ sub target_config_features(@) {
 		/low_mem/ and $ret .= "\tselect LOW_MEMORY_FOOTPRINT\n";
 		/small_flash/ and $ret .= "\tselect SMALL_FLASH\n";
 		/nand/ and $ret .= "\tselect NAND_SUPPORT\n";
+		/virtio/ and $ret .= "\tselect VIRTIO_SUPPORT\n";
 	}
 	return $ret;
 }
@@ -150,6 +152,18 @@ sub gen_target_config() {
 		target_name($a) cmp target_name($b);
 	} @target;
 
+	foreach my $target (@target_sort) {
+		next if @{$target->{subtargets}} > 0;
+		print <<EOF;
+config DEFAULT_TARGET_$target->{conf}
+	bool
+	depends on TARGET_PER_DEVICE_ROOTFS
+	default y if TARGET_$target->{conf}
+EOF
+		foreach my $pkg (@{$target->{packages}}) {
+			print "\tselect DEFAULT_$pkg if TARGET_PER_DEVICE_ROOTFS\n";
+		}
+	}
 
 	print <<EOF;
 choice
@@ -204,6 +218,9 @@ EOF
 config TARGET_MULTI_PROFILE
 	bool "Multiple devices"
 	depends on HAS_DEVICES
+	help
+	Instead of only building a single image, or all images, this allows you
+	to select images to be built for multiple devices in one build.
 
 EOF
 
@@ -237,21 +254,58 @@ endchoice
 menu "Target Devices"
 	depends on TARGET_MULTI_PROFILE
 
+	config TARGET_ALL_PROFILES
+		bool "Enable all profiles by default"
+
+	config TARGET_PER_DEVICE_ROOTFS
+		bool "Use a per-device root filesystem that adds profile packages"
+		help
+		When disabled, all device packages from all selected devices
+		will be included in all images by default. (Marked as <*>) You will
+		still be able to manually deselect any/all packages.
+		When enabled, each device builds it's own image, including only the
+		profile packages for that device.  (Marked as {M}) You will be able
+		to change a package to included in all images by marking as {*}, but
+		will not be able to disable a profile package completely.
+		
+		To get the most use of this setting, you must set in a .config stub
+		before calling "make defconfig".  Selecting TARGET_MULTI_PROFILE and
+		then manually selecting (via menuconfig for instance) this option
+		will have pre-defaulted all profile packages to included, making this
+		option appear to have had no effect.
+
 EOF
 	foreach my $target (@target) {
-		my $profiles = $target->{profiles};
-		foreach my $profile (@{$target->{profiles}}) {
+		my @profiles = sort {
+			my $x = $a->{name};
+			my $y = $b->{name};
+			"\L$x" cmp "\L$y";
+		} @{$target->{profiles}};
+		foreach my $profile (@profiles) {
 			next unless $profile->{id} =~ /^DEVICE_/;
 			print <<EOF;
-config TARGET_DEVICE_$target->{conf}_$profile->{id}
+menuconfig TARGET_DEVICE_$target->{conf}_$profile->{id}
 	bool "$profile->{name}"
 	depends on TARGET_$target->{conf}
+	default y if TARGET_ALL_PROFILES
 EOF
 			my @pkglist = merge_package_lists($target->{packages}, $profile->{packages});
 			foreach my $pkg (@pkglist) {
-				print "\tselect DEFAULT_$pkg\n";
+				print "\tselect DEFAULT_$pkg if !TARGET_PER_DEVICE_ROOTFS\n";
+				print "\tselect MODULE_DEFAULT_$pkg if TARGET_PER_DEVICE_ROOTFS\n";
 				$defaults{$pkg} = 1;
 			}
+
+			print <<EOF;
+
+
+	config TARGET_DEVICE_PACKAGES_$target->{conf}_$profile->{id}
+		string "$profile->{name} additional packages"
+		default ""
+		depends on TARGET_PER_DEVICE_ROOTFS
+		depends on TARGET_DEVICE_$target->{conf}_$profile->{id}
+
+EOF
 		}
 	}
 
@@ -339,8 +393,18 @@ config LINUX_$v
 EOF
 	}
 	foreach my $def (sort keys %defaults) {
-		print "\tconfig DEFAULT_".$def."\n";
-		print "\t\tbool\n\n";
+		print <<EOF;
+	config DEFAULT_$def
+		bool
+
+	config MODULE_DEFAULT_$def
+		tristate
+		depends on TARGET_PER_DEVICE_ROOTFS
+		depends on m
+		default m if DEFAULT_$def
+		select PACKAGE_$def
+
+EOF
 	}
 }
 

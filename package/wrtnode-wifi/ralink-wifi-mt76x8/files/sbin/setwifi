@@ -43,7 +43,9 @@ if [ ! "$line" ]; then
 	line=`iwpriv ra0 get_site_survey | fgrep "$ussid"` 
 fi
 
-if [ "$line" ]; then
+ssid=`echo ${line:4} | awk '{print $1}'`
+
+if [ "$line" -a "$ssid"x = "$ussid"x ]; then
 
 	chanel=`echo $line | awk '{print $1}'`
 	security=`echo ${line:57} | awk '{print $1}'`
